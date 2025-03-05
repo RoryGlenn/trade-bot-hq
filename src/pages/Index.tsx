@@ -1,23 +1,43 @@
 
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Bot, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Index = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const loginStatus = localStorage.getItem("isLoggedIn") === "true";
+    setIsLoggedIn(loginStatus);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-white/10 backdrop-blur-sm fixed w-full z-10">
         <div className="container mx-auto flex justify-between items-center py-4">
           <div className="text-xl font-bold text-gradient">TradeBot HQ</div>
           <div className="flex items-center gap-4">
-            <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Dashboard
-            </Link>
-            <Button asChild className="bg-purple hover:bg-purple-light transition-colors">
-              <Link to="/dashboard">
-                Launch App
-              </Link>
-            </Button>
+            {isLoggedIn ? (
+              <Button asChild className="bg-purple hover:bg-purple-light transition-colors">
+                <Link to="/dashboard">
+                  Go to Dashboard
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Login
+                </Link>
+                <Button asChild className="bg-purple hover:bg-purple-light transition-colors">
+                  <Link to="/signup">
+                    Sign Up
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>

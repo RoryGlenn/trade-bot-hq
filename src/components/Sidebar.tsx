@@ -4,7 +4,11 @@ import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, History, Settings, Bot, ChevronLeft, ChevronRight, Plus, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const Sidebar = () => {
+interface SidebarProps {
+  onLogout: () => void;
+}
+
+const Sidebar = ({ onLogout }: SidebarProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
 
@@ -72,16 +76,16 @@ const Sidebar = () => {
       </div>
 
       <div className="p-4 border-t border-border">
-        <Link
-          to="/"
+        <button
+          onClick={onLogout}
           className={cn(
-            "flex items-center p-3 rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
+            "flex items-center p-3 rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full",
             collapsed ? "justify-center" : ""
           )}
         >
           <LogOut size={20} className={collapsed ? "" : "mr-3"} />
           {!collapsed && <span>Logout</span>}
-        </Link>
+        </button>
       </div>
     </div>
   );
