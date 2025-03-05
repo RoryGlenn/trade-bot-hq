@@ -1,13 +1,12 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { AlertTriangle, Copy, ShieldCheck } from "lucide-react";
+import { apiService } from "@/services/api";
 
-// Function to generate a random 16-character ID
 const generateUserId = () => {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
@@ -31,16 +30,13 @@ const Signup = () => {
       description: "Your unique ID has been copied to clipboard"
     });
     
-    // Reset copied status after 3 seconds
     setTimeout(() => setCopied(false), 3000);
   };
 
   const handleConfirmId = () => {
-    // Save to localStorage
     localStorage.setItem("tradebotId", userId);
     localStorage.setItem("isLoggedIn", "true");
     
-    // Show confirmation
     setConfirmed(true);
     
     toast({
@@ -48,7 +44,6 @@ const Signup = () => {
       description: "Your unique ID has been saved. Please keep this ID safe."
     });
     
-    // Redirect to dashboard after 2 seconds
     setTimeout(() => {
       navigate("/dashboard");
     }, 2000);

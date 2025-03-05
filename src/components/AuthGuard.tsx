@@ -1,6 +1,8 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
+import { apiService } from "@/services/api";
+import { toast } from "@/hooks/use-toast";
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -11,12 +13,40 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
   const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check if the user is logged in
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-    const hasId = !!localStorage.getItem("tradebotId");
-    
-    setAuthenticated(isLoggedIn && hasId);
-    setLoading(false);
+    const verifyAuth = async () => {
+      // Check if the user is logged in locally
+      const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+      const userId = localStorage.getItem("tradebotId");
+      
+      if (isLoggedIn && userId) {
+        try {
+          // Verify with the server
+          const { valid } = await apiService.verifyUser(userId);
+          setAuthenticated(valid);
+          
+          if (!valid) {
+            // Clear invalid credentials
+            localStorage.removeItem("isLoggedIn");
+            toast({
+              title: "Authentication Error",
+              description: "Your session is invalid. Please log in again.",
+              variant: "destructive",
+            });
+          }
+        } catch (error) {
+          console.error("Auth verification error:", error);
+          // On error, we'll still allow access if localStorage has valid data
+          // This prevents blocking users if the backend is temporarily down
+          setAuthenticated(true);
+        }
+      } else {
+        setAuthenticated(false);
+      }
+      
+      setLoading(false);
+    };
+
+    verifyAuth();
   }, []);
 
   if (loading) {

@@ -6,13 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { KeyRound } from "lucide-react";
+import { apiService } from "@/services/api";
 
 const Login = () => {
   const [userId, setUserId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -27,22 +28,35 @@ const Login = () => {
       return;
     }
 
-    // Check if the ID exists in localStorage
-    const storedId = localStorage.getItem("tradebotId");
-    
-    if (storedId === userId) {
-      localStorage.setItem("isLoggedIn", "true");
+    try {
+      // Verify user ID with the server
+      const { valid } = await apiService.verifyUser(userId);
+      
+      if (valid) {
+        localStorage.setItem("tradebotId", userId);
+        localStorage.setItem("isLoggedIn", "true");
+        
+        toast({
+          title: "Login successful",
+          description: "Welcome back to TradeBot HQ!",
+        });
+        
+        navigate("/dashboard");
+      } else {
+        toast({
+          title: "Login failed",
+          description: "The ID you entered doesn't match any account",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Login successful",
-        description: "Welcome back to TradeBot HQ!",
-      });
-      navigate("/dashboard");
-    } else {
-      toast({
-        title: "Login failed",
-        description: "The ID you entered doesn't match any account",
+        title: "Error",
+        description: "Failed to verify user ID. Please try again.",
         variant: "destructive",
       });
+      console.error("Login error:", error);
+    } finally {
       setIsLoading(false);
     }
   };
