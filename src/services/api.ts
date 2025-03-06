@@ -49,5 +49,35 @@ export const apiService = {
       console.error('Error verifying user:', error);
       throw error;
     }
+  },
+
+  // Get dashboard data for a specific user
+  async getDashboardData(userId: string): Promise<any> {
+    try {
+      const response = await fetch(`${API_URL}/api/dashboard?userId=${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch dashboard data');
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      // Return default data if there's an error
+      return {
+        activeBots: 0,
+        totalProfit: 0,
+        totalTransactions: 0,
+        walletBalance: 0,
+        bots: [],
+        transactions: []
+      };
+    }
   }
 };
