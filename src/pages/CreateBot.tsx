@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronLeft, Bot, Info, AlertCircle } from "lucide-react";
@@ -10,20 +9,74 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const CreateBot = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [slippage, setSlippage] = useState([1]);
   const [priorityFee, setPriorityFee] = useState([5]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  const handleCreateBot = (e: React.FormEvent) => {
+  const handleCreateBot = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Bot Created Successfully",
-      description: "Your trading bot has been created and is now ready to use.",
-    });
-    navigate("/dashboard/bots");
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Get the user ID from localStorage (the way your app currently stores it)
+      const userId = localStorage.getItem("tradebotId");
+      
+      if (!userId) {
+        throw new Error('You must be logged in to create a bot');
+      }
+      
+      // Get form data
+      const formData = new FormData(e.target as HTMLFormElement);
+      const botData = {
+        userId, // Include userId in the request
+        name: formData.get('botName'),
+        tokenAddress: formData.get('tokenAddress'),
+        quantity: formData.get('quantity'),
+        slippage: slippage[0],
+        priorityFee: priorityFee[0],
+        gasLimit: formData.get('gasLimit'),
+        maxGas: formData.get('maxGas'),
+        stopLoss: formData.get('stopLoss'),
+        takeProfit: formData.get('takeProfit'),
+        customRpc: formData.get('customRpc')
+      };
+      
+      // Send request to backend
+      const response = await axios.post(`${API_URL}/bots`, botData);
+      
+      toast({
+        title: "Bot Created Successfully",
+        description: "Your trading bot has been created and is now ready to use.",
+      });
+      
+      navigate("/dashboard/bots");
+    } catch (err: any) {
+      console.error("Error creating bot:", err);
+      
+      const errorMessage = err.response?.data?.error || 
+                          err.message || 
+                          'Failed to create bot. Please try again.';
+      
+      setError(errorMessage);
+      
+      toast({
+        title: "Error Creating Bot",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -57,29 +110,6 @@ const CreateBot = () => {
                   <Input 
                     id="botName" 
                     placeholder="Enter a name for your bot" 
-                    className="bg-secondary border-white/10"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="apiKey">API Key</Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info size={14} className="ml-2 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="w-80">Your API key is securely stored and encrypted. We never share your keys with third parties.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <Input 
-                    id="apiKey" 
-                    type="password" 
-                    placeholder="Enter your API key" 
                     className="bg-secondary border-white/10"
                     required
                   />
@@ -230,8 +260,16 @@ const CreateBot = () => {
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-purple hover:bg-purple-light">
-                <Bot size={16} className="mr-2" /> Create Bot
+              <Button 
+                type="submit" 
+                className="bg-purple hover:bg-purple-light"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>Loading...</>
+                ) : (
+                  <><Bot size={16} className="mr-2" /> Create Bot</>
+                )}
               </Button>
             </div>
           </form>

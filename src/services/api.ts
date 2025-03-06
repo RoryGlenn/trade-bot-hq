@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export const apiService = {
   // Create a new user and get a unique ID
@@ -27,23 +29,8 @@ export const apiService = {
   // Verify if a user ID exists
   async verifyUser(userId: string): Promise<{ valid: boolean }> {
     try {
-      const response = await fetch(`${API_URL}/api/users/verify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId }),
-      });
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          return { valid: false };
-        }
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to verify user');
-      }
-      
-      return response.json();
+      const response = await axios.post(`${API_URL}/verify-user`, { userId });
+      return response.data;
     } catch (error) {
       console.error('Error verifying user:', error);
       throw error;
