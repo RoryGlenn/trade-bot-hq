@@ -1,4 +1,3 @@
-
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const apiService = {
@@ -78,6 +77,28 @@ export const apiService = {
         bots: [],
         transactions: []
       };
+    }
+  },
+
+  // Get bots data for a specific user
+  async getUserBots(userId: string): Promise<any[]> {
+    try {
+      const response = await fetch(`${API_URL}/api/bots?userId=${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch user bots');
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching user bots:', error);
+      throw error;
     }
   }
 };

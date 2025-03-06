@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -136,6 +135,28 @@ app.get('/api/dashboard', (req, res) => {
   }
   
   return res.status(200).json(userDashboards.get(userId));
+});
+
+// Get bots for a specific user
+app.get('/api/bots', (req, res) => {
+  const { userId } = req.query;
+  
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+  
+  // Check if the user exists
+  if (!users.has(userId)) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  
+  // Get user's dashboard data to extract bots
+  if (!userDashboards.has(userId)) {
+    userDashboards.set(userId, generateDemoData(userId));
+  }
+  
+  const userDashboard = userDashboards.get(userId);
+  return res.status(200).json(userDashboard.bots || []);
 });
 
 // Root route for Heroku

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Bot, Search, Filter } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -7,49 +7,53 @@ import BotCard from "@/components/BotCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { apiService } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
+
+interface Bot {
+  id: string;
+  name: string;
+  status: "active" | "paused" | "stopped";
+  tokenAddress: string;
+  profit: number;
+  transactions: number;
+  createdAt: string;
+}
 
 const Bots = () => {
+  const { toast } = useToast();
   const [filterStatus, setFilterStatus] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [bots, setBots] = useState<Bot[]>([]);
   
-  // Sample bots data
-  const bots = [
-    {
-      id: "bot-1",
-      name: "ETH Trading Bot",
-      status: "active" as const,
-      tokenAddress: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
-      profit: 12.5,
-      transactions: 87,
-      createdAt: "2 days ago"
-    },
-    {
-      id: "bot-2",
-      name: "SOL Sniper",
-      status: "paused" as const,
-      tokenAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-      profit: -3.2,
-      transactions: 42,
-      createdAt: "1 week ago"
-    },
-    {
-      id: "bot-3",
-      name: "PEPE Token Bot",
-      status: "stopped" as const,
-      tokenAddress: "0x6982508145454Ce325dDbE47a25d4ec3d2311933",
-      profit: 25.8,
-      transactions: 154,
-      createdAt: "3 weeks ago"
-    },
-    {
-      id: "bot-4",
-      name: "BTC Leverage Bot",
-      status: "active" as const,
-      tokenAddress: "0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D",
-      profit: 8.3,
-      transactions: 62,
-      createdAt: "1 month ago"
-    }
-  ];
+  useEffect(() => {
+    const fetchBots = async () => {
+      try {
+        const userId = localStorage.getItem("tradebotId");
+        if (!userId) {
+          throw new Error("No user ID found");
+        }
+        
+        // Fetch bots from the API
+        const botsData = await apiService.getUserBots(userId);
+        setBots(botsData);
+      } catch (error) {
+        console.error("Failed to fetch bots:", error);
+        toast({
+          title: "Could not load bots data",
+          description: "Please try again later or contact support.",
+          variant: "destructive",
+        });
+        
+        // Set empty array when error occurs
+        setBots([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchBots();
+  }, [toast]);
 
   // Filter bots based on status
   const filteredBots = filterStatus === "all" 
@@ -109,21 +113,40 @@ const Bots = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {filteredBots.map(bot => (
-          <BotCard key={bot.id} {...bot} />
-        ))}
-        
-        <Link 
-          to="/dashboard/bots/create" 
-          className="flex flex-col items-center justify-center h-full min-h-[220px] border border-dashed border-white/20 rounded-xl hover:border-purple/50 hover:bg-white/5 transition-all duration-300"
-        >
-          <div className="p-4 rounded-full bg-purple/10 mb-3">
-            <Bot size={24} className="text-purple" />
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="glass-morphism p-8 animate-pulse rounded-xl">
+            <p className="text-lg">Loading your bots...</p>
           </div>
-          <span className="text-muted-foreground">Create a new trading bot</span>
-        </Link>
-      </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {filteredBots.length > 0 ? (
+            <>
+              {filteredBots.map(bot => (
+                <BotCard key={bot.id} {...bot} />
+              ))}
+              
+              <Link 
+                to="/dashboard/bots/create" 
+                className="flex flex-col items-center justify-center h-full min-h-[220px] border border-dashed border-white/20 rounded-xl hover:border-purple/50 hover:bg-white/5 transition-all duration-300"
+              >
+                <div className="p-4 rounded-full bg-purple/10 mb-3">
+                  <Bot size={24} className="text-purple" />
+                </div>
+                <span className="text-muted-foreground">Create a new trading bot</span>
+              </Link>
+            </>
+          ) : (
+            <div className="col-span-full flex flex-col items-center justify-center h-32 glass-morphism rounded-xl">
+              <p className="text-muted-foreground">No bots found</p>
+              <Link to="/dashboard/bots/create" className="text-purple hover:underline mt-2">
+                Create your first bot
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
     </DashboardLayout>
   );
 };
